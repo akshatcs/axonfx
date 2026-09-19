@@ -1,0 +1,16 @@
+[project]
+name = "axonfx"
+version = "0.1.0"
+description = "Distributed multi-currency exchange demo, built on a from-scratch Raft implementation over gRPC"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "grpcio==1.83.1",
+    "grpcio-tools==1.83.1",
+]
+
+[tool.uv]
+# This is a collection of scripts run with `uv run -m <module>`, not a
+# library anything imports - there's nothing here worth building into a
+# wheel, so don't try.
+package = false

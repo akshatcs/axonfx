@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package axonfx.llm;
+
+// LLMService is a standalone, independent node - it holds no replicated
+// state, and does NOT talk to the AxonFx Raft cluster at all. It
+// answers general questions about how AxonFx works, grounded in a
+// static FAQ.md, using a local LLM (see llm_node/llm_api.py).
+service LLMService {
+  rpc Ask(AskRequest) returns (AskResponse);
+}
+
+message AskRequest {
+  string text = 1;
+}
+
+message AskResponse {
+  string reply = 1;
+  bool answered = 2;   // false if the LLM backend wasn't configured or the call failed
+}
+

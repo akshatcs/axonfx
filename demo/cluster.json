@@ -1,0 +1,8 @@
+{
+  "nodes": [
+    {"id": "node2", "raft_address": "127.0.0.1:6002", "grpc_port": 7001},
+    {"id": "node3", "raft_address": "127.0.0.1:6003", "grpc_port": 7002},
+    {"id": "node4", "raft_address": "127.0.0.1:6004", "grpc_port": 7003},
+    {"id": "node5", "raft_address": "127.0.0.1:6005", "grpc_port": 7004}
+  ]
+}

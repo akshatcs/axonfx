@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package axonfx.raft;
+
+// The two required consensus RPCs, as actual gRPC calls - this is the wire
+// protocol the raft cluster nodes use to talk to each other. Intentionally
+// separate from exchange.proto (the client-facing API): this file is
+// internal cluster traffic only, never called by a client.
+//
+// Field names below match the Raft paper's own RPC signatures (Figure 2)
+// as closely as protobuf allows: candidateId/leaderId identify the caller
+// on a *request*, exactly as the paper defines them. Replies don't repeat
+// the sender's id - a gRPC reply already only ever goes back to whoever
+// placed the call, so there's nothing to look up.
+service RaftService {
+  rpc RequestVote(RequestVoteRequest) returns (RequestVoteReply);
+  rpc AppendEntries(AppendEntriesRequest) returns (AppendEntriesReply);
+}
+
+// requestVote(term, candidateId, lastLogIndex, lastLogTerm)
+message RequestVoteRequest {
+  int64 term = 1;
+  string candidate_id = 2;
+  int64 last_log_index = 3;
+  int64 last_log_term = 4;
+}
+
+// requestVoteReply(term, voteGranted)
+message RequestVoteReply {
+  int64 term = 1;
+  bool vote_granted = 2;
+}
+
+// One entry in the replicated log. `command` is an opaque, pickled
+// application-level command (see state_machine.py) - raft.proto doesn't
+// need to know anything about transfers, currencies, etc. That's the
+// whole point of a replicated *state machine*: the consensus layer only
+// ever moves opaque bytes around in a fixed order.
+message LogEntry {
+  int64 index = 1;
+  int64 term = 2;
+  bytes command = 3;
+}
+
+// appendEntries(term, leaderId, prevLogIndex, prevLogTerm, entries[], leaderCommit)
+message AppendEntriesRequest {
+  int64 term = 1;
+  string leader_id = 2;
+  int64 prev_index = 3;
+  int64 prev_term = 4;
+  int64 commit_index = 5;
+  repeated LogEntry entries = 6;
+}
+
+// appendEntriesReply(term, entryAppended, matchIndex)
+// On rejection, match_index doubles as a backtracking hint (the
+// follower's actual log length / conflicting entry's first index),
+// so the leader can recover in one round trip instead of decrementing
+// nextIndex one at a time.
+message AppendEntriesReply {
+  int64 term = 1;
+  bool entry_appended = 2;
+  int64 match_index = 3;
+}
