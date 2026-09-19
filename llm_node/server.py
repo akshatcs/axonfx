@@ -1,14 +1,6 @@
 """
-Node 1: the AI/LLM server. Genuinely independent now - unlike earlier
-versions of this project, it holds no connection to the Raft cluster at
-all, no state, nothing. It answers general questions about how AxonFx
-works, grounded in FAQ.md, using a local LLM (see llm_api.py). It
-cannot submit transfers and cannot read live balances or transfer
-history - use client/cli.py directly for either of those.
-
-There is deliberately no fallback if the LLM backend isn't configured
-or a call fails - that request fails honestly, with a clear explanation
-of what to check, rather than silently answering some other way.
+Node 1: the AI/LLM server. It answers general questions about how AxonFx
+works, grounded in FAQ.md, using a local LLM (see llm_api.py).
 
     python3 -m llm_node.server
 """

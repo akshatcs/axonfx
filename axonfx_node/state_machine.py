@@ -1,23 +1,15 @@
 """
-This is the core of the project: the replicated ledger. The
-only thing that makes it "replicated" is that raft.py calls its single
-public entry point, apply(), once per committed log entry, in the same
-order, on every node in the cluster (see raft.py's _apply_loop). This
-file has no idea Raft exists.
+This is the replicated ledger. The only thing that makes it replicated is that raft.py calls its single public entry point, 
+apply(), once per committed log entry, in the same order, on every node in the cluster (see raft.py's _apply_loop).
 
-Remember: apply() must be a pure function of
-(current ledger state, command bytes) - no clock, no external API call,
-no randomness. If three nodes each independently asked "what's the forex
-rate right now?" while applying the same command, they could get three
-different answers and their ledgers would silently disagree - Raft only
-guarantees replicas see the *same command bytes*, not that they'd
-compute the same result from *different* live inputs.
+Note: apply() must be a pure function of (current ledger state, command bytes) - no clock or no external API call. If three 
+nodes each independently asked "what's the forex rate right now?" while applying the same command, they could get three
+different answers and their ledgers would silently disagree - Raft only guarantees replicas see the same command bytes, not that they'd
+compute the same result from different live inputs.
 
-The fix: take_snapshot() below is called exactly once, by
-grpc_service.py, BEFORE a command is ever built and handed to
-raft_node.propose(). Its result travels inside the pickled command bytes
-that become the log entry. apply() just unpacks and replays already-
-decided numbers; it never calls take_snapshot() itself.
+Our solution: take_snapshot() below is called exactly once, by grpc_service.py, before a command is ever built and handed to 
+raft_node.propose(). Its result travels inside the pickled command bytes that become the log entry. 
+apply() just unpacks and replays already decided numbers. It never calls take_snapshot() itself.
 """
 
 import hashlib

@@ -1,20 +1,14 @@
 """
-The matching / netting engine.
+The transaction matching engine.
 
-AxonFx doesn't run a continuous double-auction order book - there's no
-independent buyer/seller pricing to match. What it actually needs to
-decide, every time a payout can't be fully covered by the destination
-pool alone, is: *which currencies should fund the shortfall, and in what
-order, to get the best effective rate* - called the "intermediate
-routing", example: (USD -> GBP -> INR beating USD -> INR
+AxonFx doesn't run a continuous double-auction order book - there's no independent buyer/seller pricing to match. 
+What it actually needs to decide, every time a payout can't be fully covered by the destination pool alone, is: which currencies should fund the shortfall, and in what
+order, to get the best effective rate - called the "intermediate routing", example: (USD -> GBP -> INR beating USD -> INR
 directly when GBP happens to be cheap to convert right now).
 
-That is a fractional knapsack problem: each currency pool is a "source"
-with a fixed capacity (its balance) and a fixed unit rate (its cross rate
-to the destination currency); we need a fixed total amount of the
-destination currency; and greedily filling from the best rate down is
-*provably* optimal for fractional knapsack. So instead of a full
-order-book/price-time-priority matcher, one small greedy pass gives the
+That is a fractional knapsack problem: each currency pool is a "source" with a fixed capacity (its balance) and a fixed unit rate (its cross rate
+to the destination currency). We need a fixed total amount of the destination currency and greedily filling from the best rate down is
+provably optimal for fractional knapsack. So instead of a full order-book/price-time-priority matcher, one small greedy pass gives the
 mathematically best answer for this exact problem shape.
 
 """
@@ -35,9 +29,8 @@ class Fill:
 # payout are capped at their balance. The currency the sender's money just
 # arrived in is always allowed to go further than its nominal pool balance,
 # because AxonFx can always call its forex partner to convert more of the
-# money that's already sitting in that account (Scenario 2's "direct
-# conversion" fallback). We model that as a very large cap rather than
-# literal infinity so the arithmetic stays well-behaved.
+# money that's already sitting in that account.
+# We model that as a very large cap rather than literal infinity so the arithmetic stays well-behaved.
 UNLIMITED_CAP = 10 ** 15
 
 
@@ -89,10 +82,10 @@ def plan_fills(dest_currency, amount_needed, source_currency, balances, cross_ra
             produced=round(take_dest, 6),
             rate=rate,
             # True = funded via an intermediate currency's surplus balance
-            # (Scenario 3, "intermediate routing"). False = a direct
-            # conversion of the sender's own inbound funds (Scenario 2).
+            # False = a direct conversion of the sender's own inbound funds.
             used_pool_surplus=not is_source,
         ))
         remaining -= take_dest
 
     return fills, max(remaining, 0.0)
+

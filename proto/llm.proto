@@ -3,7 +3,7 @@ syntax = "proto3";
 package axonfx.llm;
 
 // LLMService is a standalone, independent node - it holds no replicated
-// state, and does NOT talk to the AxonFx Raft cluster at all. It
+// state, and does not talk to the AxonFx Raft cluster at all. It
 // answers general questions about how AxonFx works, grounded in a
 // static FAQ.md, using a local LLM (see llm_node/llm_api.py).
 service LLMService {

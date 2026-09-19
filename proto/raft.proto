@@ -2,14 +2,12 @@ syntax = "proto3";
 
 package axonfx.raft;
 
-// The two required consensus RPCs, as actual gRPC calls - this is the wire
-// protocol the raft cluster nodes use to talk to each other. Intentionally
-// separate from exchange.proto (the client-facing API): this file is
+// This is the protocol the raft cluster nodes use to talk to each other. It's 
+// intentionally separate from exchange.proto (the client-facing API): this file is
 // internal cluster traffic only, never called by a client.
 //
-// Field names below match the Raft paper's own RPC signatures (Figure 2)
-// as closely as protobuf allows: candidateId/leaderId identify the caller
-// on a *request*, exactly as the paper defines them. Replies don't repeat
+// Field names below match the Raft RPC signatures. candidateId/leaderId identify the caller
+// on a request, exactly as the paper defines them. Replies don't repeat
 // the sender's id - a gRPC reply already only ever goes back to whoever
 // placed the call, so there's nothing to look up.
 service RaftService {
@@ -32,9 +30,9 @@ message RequestVoteReply {
 }
 
 // One entry in the replicated log. `command` is an opaque, pickled
-// application-level command (see state_machine.py) - raft.proto doesn't
+// application-level command (refer state_machine.py) - raft.proto doesn't
 // need to know anything about transfers, currencies, etc. That's the
-// whole point of a replicated *state machine*: the consensus layer only
+// whole point of a replicated state machine: the consensus layer only
 // ever moves opaque bytes around in a fixed order.
 message LogEntry {
   int64 index = 1;

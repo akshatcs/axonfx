@@ -1,8 +1,7 @@
 """
-Live dashboard for the AxonFx cluster - not one of the 5 required nodes,
-just an observability tool for demos. Run it in a second terminal/pane
-while running the actual commands (kill -9, transfers, restarts)
-elsewhere, and we can watch leadership move, a node go down and come
+Live dashboard for the AxonFx cluster.
+It's just an observability tool for demos. Run it in a second terminal/pane
+while running the actual commands elsewhere, and we can watch leadership move, a node go down and come
 back, and the ledger stay identical across every live node - all in
 real time, without having to type `status`/`balances` over and over.
 
@@ -170,3 +169,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

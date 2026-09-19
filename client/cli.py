@@ -7,10 +7,7 @@ Usage:
     python3 -m client.cli --node 127.0.0.1:7002 transfer USD INR 10000 --to "Priya Sharma" --account "HDFC-x1234"
     python3 -m client.cli --node 127.0.0.1:7002 history
 
-We can point --node at ANY node in the cluster, not just the leader -
-the node we contact forwards writes to the leader internally (see
-grpc_service.py's _forward()). If a node is completely unreachable
-(e.g. it's unavailable at the moment), just point at a different one.
+We can point --node at ANY node in the cluster, not just the leader - the node we contact forwards writes to the leader internally.
 """
 
 import argparse
@@ -120,3 +117,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

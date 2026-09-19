@@ -1,48 +1,32 @@
 """
 Local-LLM-backed FAQ answering for the LLM node, via Ollama.
 
-Node 1 no longer submits transfers or reads live cluster data - it only
-answers general questions about AxonFx, grounded in FAQ.md, using a
-local model. If LLM_PROVIDER=ollama isn't set, or the call fails for
-any reason (Ollama not running, model not pulled, timeout, an empty
-reply), answer_from_faq() returns None - the caller (llm_node/server.py)
-turns that into an honest "couldn't answer" response. There is no
-fallback to a weaker answering method; a failed call fails that request
-outright, rather than degrading silently.
-
-Uses only the Python standard library (urllib) - no new dependency, no
-change to requirements.txt.
-
 --- Setup ---
 
-Off by default - nothing here is used unless explicitly turned on:
+This service is off by default - nothing here is used unless explicitly turned on:
 
     export LLM_PROVIDER=ollama
 
-Running Ollama locally (including inside WSL) - a real, small,
-pretrained model, not a from-scratch toy:
+Running Ollama locally (inside WSL) with a CPU optimized LLM model:
 
     curl -fsSL https://ollama.com/install.sh | sh
     ollama serve &                    # if not already running as a service
     ollama pull qwen2.5:1.5b          # default model this file expects
 
-Note for WSL specifically: `ollama serve` needs to actually be running
+Note for WSL: `ollama serve` needs to actually be running
 before this will work - the install script sets it up as a systemd
 service on distros with systemd enabled, but older/default WSL setups
 often don't have systemd on, in which case run `ollama serve` yourself
 in its own terminal and leave it running.
 
-Optionally override the model, timeout, or temperature:
+We can also override the model, timeout, or temperature:
 
-    export OLLAMA_MODEL=qwen2.5:1.5b          # default shown
-    export OLLAMA_TIMEOUT_SECONDS=30          # default shown
-    export OLLAMA_TEMPERATURE=0.1             # default shown - low on purpose,
-                                               # answering from a fixed FAQ should
-                                               # be consistent, not "creative"
+    export OLLAMA_MODEL=qwen2.5:1.5b     # default shown
+    export OLLAMA_TIMEOUT_SECONDS=30     # default shown
+    export OLLAMA_TEMPERATURE=0.1        # default shown - low on purpose, because answering from a fixed FAQ should be
+                                         # consistent, not necessarily creative.
 
-If calls keep failing, check the node's own log line
-("LLM backend unavailable/failed") - the most common cause is
-`ollama serve` not actually running, or the model not pulled yet.
+If calls keep failing, check the node's own log line ("LLM backend unavailable/failed") - the most common cause is `ollama serve` not actually running, or the model not pulled yet.
 """
 
 import json
@@ -50,13 +34,12 @@ import os
 import urllib.error
 import urllib.request
 
-# Ollama's OpenAI-compatible endpoint - local, no auth. Default port is
+# Ollama's OpenAI-compatible endpoint
 # Ollama's own standard, unrelated to any port used elsewhere in AxonFx.
 OLLAMA_API_URL = "http://localhost:11434/v1/chat/completions"
 DEFAULT_OLLAMA_MODEL = "qwen2.5:1.5b"
 # CPU generation is genuinely slower than a hosted API call - a short
-# timeout here would fail a request that was actually still working,
-# not stuck. Overridable if your machine needs more (or less) room.
+# timeout here would fail a request that was actually still working.
 OLLAMA_TIMEOUT = float(os.environ.get("OLLAMA_TIMEOUT_SECONDS", "30"))
 # Ollama's own default temperature (~0.7-0.8) is tuned for open-ended
 # conversation. Answering consistently from a fixed FAQ does better,
@@ -67,8 +50,7 @@ OLLAMA_TEMPERATURE = float(os.environ.get("OLLAMA_TEMPERATURE", "0.1"))
 
 def _active_provider():
     """Returns "ollama" if explicitly enabled, else None. Off by
-    default - a local, unauthenticated service has no natural "key
-    present" signal to auto-detect from, so this has to be opt-in."""
+    default - nothing here is used unless explicitly turned on."""
     if os.environ.get("LLM_PROVIDER", "").strip().lower() == "ollama":
         return "ollama"
     return None

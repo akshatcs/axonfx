@@ -1,6 +1,6 @@
 """
 Runs the product spec's five scenarios (plus a live leader-failover test)
-against a REAL running cluster - this isn't a mock, it's making actual
+against a REAL running cluster. This isn't a mock, it's making actual
 gRPC calls that go through actual Raft consensus.
 
 Start a fresh cluster first (see README.md), then:

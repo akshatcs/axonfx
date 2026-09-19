@@ -87,7 +87,7 @@ not part of the Raft cluster and is not listed in `cluster.json`.
   the timeout or the leader-lease step-down (1.5s) doing its
   job - i.e., the cluster genuinely lost quorum. Check `status` on a couple of
   nodes to confirm.
-- Stale state between demo runs — `demo/run_cluster.sh` wipes
+- Stale state between demo runs - `demo/run_cluster.sh` wipes
   `data/<node>/` on every start, so each run begins from the same fixed
   starting pools in `state_machine.py`.
 

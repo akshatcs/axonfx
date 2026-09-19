@@ -1,8 +1,5 @@
 """
-Entrypoint for a single AxonFx cluster node. Run three of these (different
---node-id, same --config) to get a real 3-process Raft cluster on
-localhost - kill -9 any one of them and the other two elect a new leader
-and keep serving transfers.
+Entrypoint for a single AxonFx cluster node.
 
 Each node process runs TWO gRPC servers on two different ports:
   - RaftService, on `raft_address` (e.g. 127.0.0.1:6002) - internal
@@ -104,3 +101,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

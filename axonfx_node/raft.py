@@ -1,20 +1,15 @@
 """
 A from-scratch Raft implementation (Diego Ongaro & John Ousterhout's consensus algorithm - https://raft.github.io/raft.pdf).
-The two required RPCs - RequestVote and AppendEntries - are real gRPC calls between the raft cluster's
-nodes, defined in proto/raft.proto.
+The two required RPCs - RequestVote and AppendEntries - are real gRPC calls between the raft cluster's nodes, defined in proto/raft.proto.
 
-WHAT THIS FILE OWNS: leader election, log replication, and turning a sequence of committed log entries into calls on a
-state machine's apply() method, in order, on every node. It knows nothing about transfers, currencies, or matching
-engines - it only moves opaque `command` bytes around and guarantees every node applies them in the
-same order. That separation is the entire point of a replicated state machine (see state_machine.py's
-module docstring for the other documentation - why the *contents* of those commands must be decided once, outside this
-file, before they ever reach propose()).
+The following is implemented: leader election, log replication, and turning a sequence of committed log entries into calls on a state machine's apply() method, 
+in order, on every node. It knows nothing about transfers, currencies, or matching engines - it only moves opaque command bytes around and guarantees every node 
+applies them in the same order. That separation is the entire point of a replicated state machine.
 
-THREADING MODEL: one RLock (self._lock, wrapped in a Condition so propose() can block until its entry is applied) guards
-every mutation of Raft state. Three kinds of background threads touch it: one election-timeout timer, one apply loop, and
-one replication loop per peer. All network calls (the actual gRPC RequestVote/AppendEntries) are made WITHOUT holding
-the lock - only the state needed to build the request is read under the lock, and only the reply is processed under
-the lock. Holding a lock across a network call would let one slow or dead peer stall the entire node.
+Threading: one RLock (self._lock, wrapped in a Condition so propose() can block until its entry is applied) guards every mutation of Raft state. Three kinds of background 
+threads touch it: one election-timeout timer, one apply loop, and one replication loop per peer. 
+All network calls (the actual gRPC RequestVote/AppendEntries) are made without holding the lock - only the state needed to build the request is read under the lock, and 
+only the reply is processed under the lock. Holding a lock across a network call would let one slow or dead peer stall the entire node.
 """
 
 import enum
@@ -93,7 +88,7 @@ class RaftNode:
         self._lock = threading.RLock()
         self._cv = threading.Condition(self._lock)
 
-        # Persistent state (Figure 2 of the Raft paper), plus commit_index
+        # Persistent state, plus commit_index
         # which the paper treats as volatile - we persist it too so a
         # restarted node can replay and be immediately correct without
         # waiting to re-learn commit_index from the network first. This
@@ -123,7 +118,7 @@ class RaftNode:
         self._election_deadline = 0.0
         self._stopped = False
 
-        self._stubs = {}  # peer_id -> RaftServiceStub, lazily created
+        self._stubs = {}  # peer_id -> RaftServiceStub
 
         self._load_persisted()
         self._replay_committed_locked_at_startup()
@@ -253,7 +248,7 @@ class RaftNode:
 
             my_last_index = self._last_log_index_locked()
             my_last_term = self._last_log_term_locked()
-            # Section 5.4.1: candidate's log must be at least as up-to-date
+            # candidate's log must be at least as up-to-date
             # as ours - compare by term first, then by length.
             log_ok = (req.last_log_term > my_last_term or
                       (req.last_log_term == my_last_term and req.last_log_index >= my_last_index))
@@ -290,7 +285,7 @@ class RaftNode:
             self._leader_id = leader
             self._reset_election_timer_locked()
 
-            # Consistency check (Section 5.3).
+            # Consistency check
             if req.prev_index > self._last_log_index_locked():
                 return raft_pb2.AppendEntriesReply(
                     term=self._current_term, entry_appended=False,
@@ -521,7 +516,7 @@ class RaftNode:
             time.sleep(HEARTBEAT_INTERVAL if caught_up else 0.02)
 
     def _maybe_advance_commit_index_locked(self):
-        """Section 5.3/5.4.2: a leader may only advance commitIndex to N if
+        """ A leader may only advance commitIndex to N if
         a majority of matchIndex[] >= N AND log[N] is from the leader's
         OWN current term - committing an older term's entry directly
         would risk it later being overwritten by a future leader who
@@ -569,7 +564,7 @@ class RaftNode:
 
 
 class RaftServiceServicer(raft_pb2_grpc.RaftServiceServicer):
-    """Thin gRPC-facing wrapper - all real logic lives on RaftNode above."""
+    """Thin gRPC-facing wrapper around RaftNode, so the node itself doesn't need to know about gRPC or protobufs."""
 
     def __init__(self, node: RaftNode):
         self.node = node
@@ -579,3 +574,4 @@ class RaftServiceServicer(raft_pb2_grpc.RaftServiceServicer):
 
     def AppendEntries(self, request, context):
         return self.node.handle_append_entries(request)
+

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package axonfx;
 
-// ClientService is the ONLY interface external clients talk to.
+// ClientService is the only interface external clients talk to.
 // Raft/consensus internals are not exposed here - a client can call any node in the cluster 
 // and get a correct answer.
 service ClientService {
@@ -10,12 +10,10 @@ service ClientService {
   // committed by a majority of the Raft cluster and fully settled.
   rpc SubmitTransfer(SubmitTransferRequest) returns (SubmitTransferResponse);
 
-  // Read-only balance lookup (served locally, no need to hit the leader -
-  // reads are allowed to be slightly stale on followers, which is fine for
-  // a "check my liquidity pools" style query).
+  // Read-only balance lookup (served locally, no need to hit the leader)
   rpc GetBalances(GetBalancesRequest) returns (GetBalancesResponse);
 
-  // Cluster/node health & Raft role, useful for demos ("who is leader now").
+  // Cluster/node health & Raft role, useful for demos ("It answers who is leader now").
   rpc GetStatus(GetStatusRequest) returns (GetStatusResponse);
 
   // Transfer history (for demo/debugging visibility into what happened).
