@@ -77,11 +77,9 @@ def main():
     )
     os.makedirs(data_dir, exist_ok=True)
 
-    # Fail loudly, immediately, before touching Raft state at all, if
-    # either port this node needs is already taken - see
-    # _require_port_free()'s docstring for why this can't be left to
-    # add_insecure_port() itself to catch. Probed on 0.0.0.0, matching
-    # exactly what add_insecure_port() below actually binds to.
+    # Check port availability before mutating Raft state.
+    # We probe 0.0.0.0 here because add_insecure_port() cannot catch
+    # pre-existing bindings cleanly (see _require_port_free()).
     raft_port = int(me["raft_address"].split(":")[1])
     _require_port_free("0.0.0.0", raft_port, "raft_address")
     _require_port_free("0.0.0.0", me["grpc_port"], "grpc_port")
