@@ -16,6 +16,7 @@ import argparse
 import json
 import os
 import signal
+import socket
 import sys
 import time
 from concurrent import futures
@@ -28,6 +29,27 @@ from axonfx_node.grpc_service import ClientServiceServicer
 from axonfx_node.raft import RaftNode, RaftServiceServicer
 
 DEFAULT_CONFIG = os.path.join(os.path.dirname(__file__), "..", "demo", "cluster.json")
+
+
+def _require_port_free(host, port, label):
+    """
+    Raise a clear, immediate error if something is already listening on
+    port, instead of silently sharing it.
+
+    gRPC's own add_insecure_port() sets SO_REUSEPORT on Linux, so binding
+    the SAME port twice, both servers end up genuinely listening, and the
+    kernel splits incoming connections between them arbitrarily.
+    """
+    probe = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    try:
+        probe.bind((host, port))
+    except OSError:
+        sys.exit(
+            f"{label} port {port} is already in use. This --node-id " is
+            f"already running? Stop the existing process first.")
+    finally:
+        probe.close()
 
 
 def load_cluster(config_path):
@@ -54,6 +76,15 @@ def main():
         os.path.dirname(__file__), "..", "data", args.node_id
     )
     os.makedirs(data_dir, exist_ok=True)
+
+    # Fail loudly, immediately, before touching Raft state at all, if
+    # either port this node needs is already taken - see
+    # _require_port_free()'s docstring for why this can't be left to
+    # add_insecure_port() itself to catch. Probed on 0.0.0.0, matching
+    # exactly what add_insecure_port() below actually binds to.
+    raft_port = int(me["raft_address"].split(":")[1])
+    _require_port_free("0.0.0.0", raft_port, "raft_address")
+    _require_port_free("0.0.0.0", me["grpc_port"], "grpc_port")
 
     def log(msg):
         print(f"[{args.node_id}] {msg}", flush=True)
